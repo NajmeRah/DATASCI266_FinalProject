@@ -10,10 +10,8 @@ from transformers import BertTokenizer
 from recobert_metrics import HR_k, MPR, MRR
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EVAL_PATH = os.path.join(BASE_DIR, "Data", "eval_descriptions.csv")
-CHECKPOINT_PATH = os.path.join(BASE_DIR, "checkpoint", "034_1.4295.pth")
-SCORE_PATH = os.path.join(BASE_DIR, "Data", "plant_scores.pt")
-LABELS_PATH = os.path.join(BASE_DIR, "Data", "plant_labels.pt")
+EVAL_PATH = os.path.join(BASE_DIR, "Data", "transformed_wiki_descriptions_with_generated_descriptions.csv")
+CHECKPOINT_PATH = os.path.join(BASE_DIR, "checkpoints", "042_1.3863.pth")
 
 def eval_plants():
     tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
@@ -26,20 +24,15 @@ def eval_plants():
     print(f"Using {device} device")
     model = model.eval().to(device)
 
-    prev_seed = ""
     ratings, targets = [], []
 
     with torch.no_grad():
         for i, seed in df.iterrows():
-            if seed["seed_description"] == prev_seed:
-                continue
-
-            prev_seed = seed["seed_description"]
             rating, target = [], []
 
             for _, reco in df.iterrows():
-                seed_d = seed["seed_description"]
-                reco_t, reco_d = reco["recommended_title"], reco["recommended_description"]
+                seed_d = seed["user_description"]
+                reco_t, reco_d = reco["name"], reco["generated_description"]
 
                 tokens = tokenizer(
                     [reco_t, reco_t],
@@ -71,7 +64,7 @@ def eval_plants():
                 dd_sim = cos_sim.forward(seed_fd, reco_fd)
 
                 total = sum([dt_sim, dd_sim])
-                label = seed["seed_description"] == reco["seed_description"]
+                label = seed["user_description"] == reco["user_description"]
 
                 rating.append(total.item())
                 target.append(bool(label))
@@ -85,10 +78,10 @@ def eval_plants():
     r = torch.tensor(ratings, dtype=torch.float32)
     y = torch.tensor(targets, dtype=torch.bool)
 
-    HR10, HR50, HR100 = HR_k(10, r, y), HR_k(50, r, y), HR_k(100, r, y)
+    HR1, HR5, HR10, HR50, HR100 = HR_k(1, r, y), HR_k(5, r, y), HR_k(10, r, y), HR_k(50, r, y), HR_k(100, r, y)
     _MRR, _MPR = MRR(r, y), MPR(r, y)
 
-    prnt = f"HR@10 - {HR10}, HR@50 - {HR50}, HR@100 - {HR100}, MRR: {_MRR}, MPR: {_MPR}"
+    prnt = f"HR@1 - {HR1}, HR@5 - {HR5}, HR@10 - {HR10}, HR@50 - {HR50}, HR@100 - {HR100}, MRR: {_MRR}, MPR: {_MPR}"
     print(f"Plant dataset evaluation: {prnt}")
 
 eval_plants()
