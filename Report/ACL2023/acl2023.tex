@@ -182,7 +182,10 @@ corresponding to the original token.
 
 \subsection{Advance Sentence BERT}
 
-% TODO: add short description of advanced Sentence-BERT model here
+For the implementation of SBert we first used all-MiniLM-L6-v2 from hugging face to encode both the Perenual data and the text generated from the wikipedia descriptions. For each Perenual description embedding a cosine similarity was run against each of the generated descriptions. Then the top k similar embeddings were selected for each Perenual description where k = 1, 5, and 10. Each of these embeddings were then translated back into their plant names. Accuracy was calculated for each of the k values where the original Perenual name was in the list of predicted values.
+
+In an attempt to improve the accuracy the same model was then finetuned. For this all but the last layer of the model had their parameters frozen. The Perenual dataset text descriptions with the description generated from ChatGPT based on the Perenual dataset were paired with a cosine similarity of 1. To generate some negative examples the descriptions were shifted 5 places. These were given a cosine similarity of 0. The model was then finetuned over one epoch using the CoSENTLoss loss function with a batch size of 16 and a warm up ratio of 0.1.
+Code: \href{https://github.com/NajmeRah/DATASCI266_FinalProject/blob/main/Code/SBert.ipynb}{SBERT Code}
 
 \section{Results}
 
