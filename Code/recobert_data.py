@@ -88,10 +88,14 @@ class CollatorWrapper:
         self.collator = collator
 
     def __call__(self, data: List[Dict[str, Any]]) -> Dict[str, Tensor]:
-        encoded = self._encode(data)
+        encoded_titles, encoded_descrs, encoded = self._encode(data)
         masked = self.collator(encoded["input_ids"], return_tensors="pt")
 
         output = {
+            "title_input_ids": encoded_titles["input_ids"],
+            "title_attention_mask": torch.tensor(encoded_titles["attention_mask"], dtype=torch.int32),
+            "descr_input_ids": encoded_descrs["input_ids"],
+            "descr_attention_mask": torch.tensor(encoded_descrs["attention_mask"], dtype=torch.int32),
             "input_ids": masked["input_ids"],
             "token_type_ids": torch.tensor(encoded["token_type_ids"], dtype=torch.int32),
             "special_tokens": torch.tensor(encoded["special_tokens_mask"], dtype=torch.int32),
@@ -105,6 +109,22 @@ class CollatorWrapper:
         titles = [d["title"] for d in data]
         descrs = [d["description"] for d in data]
 
+        encoded_titles = self.tokenizer(
+            titles,
+            return_special_tokens_mask=False,
+            return_token_type_ids=False,
+            padding=True,
+            truncation=True,
+            return_attention_mask=True,
+        )
+        encoded_descrs = self.tokenizer(
+            descrs,
+            return_special_tokens_mask=False,
+            return_token_type_ids=False,
+            padding=True,
+            truncation=True,
+            return_attention_mask=True,
+        )
         encoded = self.tokenizer(
             titles,
             descrs,
@@ -115,4 +135,4 @@ class CollatorWrapper:
             return_attention_mask=True,
         )
 
-        return encoded
+        return encoded_titles, encoded_descrs, encoded

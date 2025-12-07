@@ -58,12 +58,14 @@ class RecoBERT(nn.Module):
         self.lm_head = LanguageModelHead(bert.pooler.dense.out_features, vocab_size)
 
     def forward(
-        self, input_ids: Tensor, attn_mask: Tensor, special_tokens: Tensor, token_types: Tensor
+        self, title_ids: Tensor, title_attn_mask: Tensor, descr_ids: Tensor, descr_attn_mask: Tensor, input_ids: Tensor, attn_mask: Tensor, special_tokens: Tensor, token_types: Tensor
     ) -> Dict[str, Tensor]:
+        title_embeddings = self.bert.forward(input_ids=title_ids, attention_mask=title_attn_mask)
+        descr_embeddings = self.bert.forward(input_ids=descr_ids, attention_mask=descr_attn_mask)
         y = self.bert.forward(input_ids=input_ids, attention_mask=attn_mask)
         features = y["last_hidden_state"]
 
-        f_t, f_d = self.rb_head.forward(features, token_types, special_tokens)
+        f_t, f_d = title_embeddings["pooler_output"], descr_embeddings["pooler_output"]
         cos_sim = self.td_head.forward(f_t, f_d)
         lm_scores = self.lm_head.forward(features)
 

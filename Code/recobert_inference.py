@@ -10,17 +10,18 @@ from transformers import BertTokenizer
 from recobert_metrics import HR_k, MPR, MRR
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-EVAL_PATH = os.path.join(BASE_DIR, "Data", "transformed_wiki_descriptions_with_generated_descriptions.csv")
-CHECKPOINT_PATH = os.path.join(BASE_DIR, "checkpoints", "042_1.3863.pth")
+EVAL_PATH = "transformed_wiki_descriptions_with_generated_descriptions.csv"
+CHECKPOINT_PATH = "checkpoint/065_1.2134.pth"
 
 def eval_plants():
     tokenizer = BertTokenizer.from_pretrained("bert-base-cased")
     df = pd.read_csv(EVAL_PATH)
+    df = df.iloc[:100]
 
     cos_sim = nn.CosineSimilarity(dim=-1)
     model = torch.load(CHECKPOINT_PATH, weights_only=False, map_location=torch.device('cpu'))
 
-    device = "cuda:2" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
     model = model.eval().to(device)
 
@@ -44,13 +45,39 @@ def eval_plants():
                     return_attention_mask=True,
                     return_tensors="pt",
                 )
+                title_tokens = tokenizer(
+                    [reco_t, reco_t],
+                    return_special_tokens_mask=False,
+                    return_token_type_ids=False,
+                    padding=True,
+                    truncation=True,
+                    return_attention_mask=True,
+                    return_tensors="pt",
+                )
+                descr_tokens = tokenizer(
+                    [reco_d, seed_d],
+                    return_special_tokens_mask=False,
+                    return_token_type_ids=False,
+                    padding=True,
+                    truncation=True,
+                    return_attention_mask=True,
+                    return_tensors="pt",
+                )
 
                 special_tokens = tokens["special_tokens_mask"].to(device)
-                attn_mask = tokens["attention_mask"].to(device)
+                title_ids = title_tokens["input_ids"].to(device)
+                descr_ids = descr_tokens["input_ids"].to(device)
                 input_ids = tokens["input_ids"].to(device)
+                title_attn_mask = title_tokens["attention_mask"].to(device)
+                descr_attn_mask = descr_tokens["attention_mask"].to(device)
+                attn_mask = tokens["attention_mask"].to(device)
                 token_types = tokens["token_type_ids"].to(device)
 
                 out = model.forward(
+                    title_ids=title_ids,
+                    title_attn_mask=title_attn_mask,
+                    descr_ids=descr_ids,
+                    descr_attn_mask=descr_attn_mask,
                     input_ids=input_ids,
                     attn_mask=attn_mask,
                     special_tokens=special_tokens,

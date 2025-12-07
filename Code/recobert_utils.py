@@ -21,11 +21,15 @@ def evaluate(model: RecoBERT, val_loader: DataLoader, device: str) -> float:
 
     with torch.no_grad():
         for batch in val_loader:
-            in_ids, attn_mask, nsp_label, mlm_label, special_tokens, token_types = batch_to(
+            title_ids, title_attn_mask, descr_ids, descr_attn_mask, in_ids, attn_mask, nsp_label, mlm_label, special_tokens, token_types = batch_to(
                 batch, device
             )
 
             y = model.forward(
+                title_ids=title_ids,
+                title_attn_mask=title_attn_mask,
+                descr_ids=descr_ids,
+                descr_attn_mask=descr_attn_mask,
                 input_ids=in_ids,
                 attn_mask=attn_mask,
                 special_tokens=special_tokens,
@@ -61,12 +65,16 @@ def train(
         sum_loss = 0
 
         for batch in train_loader:
-            in_ids, attn_mask, nsp_label, mlm_label, special_tokens, token_types = batch_to(
+            title_ids, title_attn_mask, descr_ids, descr_attn_mask, in_ids, attn_mask, nsp_label, mlm_label, special_tokens, token_types = batch_to(
                 batch, device
             )
 
             optim.zero_grad()
             y = model.forward(
+                title_ids=title_ids,
+                title_attn_mask=title_attn_mask,
+                descr_ids=descr_ids,
+                descr_attn_mask=descr_attn_mask,
                 input_ids=in_ids,
                 attn_mask=attn_mask,
                 special_tokens=special_tokens,
@@ -107,6 +115,10 @@ def train(
     return model
 
 def batch_to(batch: Dict[str, Tensor], device: str) -> Tuple[Tensor]:
+    title_input_ids = batch["title_input_ids"].to(device)
+    title_attention_mask = batch["title_attention_mask"].to(device)
+    descr_input_ids = batch["descr_input_ids"].to(device)
+    descr_attention_mask = batch["descr_attention_mask"].to(device)
     input_ids = batch["input_ids"].to(device)
     attention_mask = batch["attention_mask"].to(device)
     NSP_label = batch["NSP_label"].to(device).to(torch.float32)
@@ -114,4 +126,4 @@ def batch_to(batch: Dict[str, Tensor], device: str) -> Tuple[Tensor]:
     special_tokens = batch["special_tokens"].to(device)
     token_type_ids = batch["token_type_ids"].to(device)
 
-    return input_ids, attention_mask, NSP_label, MLM_label, special_tokens, token_type_ids
+    return title_input_ids, title_attention_mask, descr_input_ids, descr_attention_mask, input_ids, attention_mask, NSP_label, MLM_label, special_tokens, token_type_ids

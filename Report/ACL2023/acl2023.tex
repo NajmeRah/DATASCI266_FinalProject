@@ -187,7 +187,20 @@ models can be compared.
 
 \subsection{Reco BERT}
 
-% TODO: add short description of RecoBERT model here
+RecoBERT has 2 components: title-description model and masked-language model. The
+title-description model's objective is to learn whether or not a given plant name
+and plant description are related. In the paper, they pass tokenized titles and
+descriptions (with some masked tokens) through BertModel, average the title
+and description embeddings separately, and compute cosine similarities between the
+averages. The loss function is defined to optimize for higher cosine similarity
+between related plant names and descriptions. We also attempted a variation of this
+where instead of using the embedding averages, we took the "pooler_output" parts of
+the BertModel title and description outputs and computed their cosine similarities.
+The masked-language model's objective is to learn embeddings for masked tokens that
+give high weight to the original token. This allows for incorporating domain-specific
+nuances. Specifically, it projects BertModel embeddings onto the dimension of vocabulary
+size and uses a loss function that optimizes for a high embedding value for the index
+corresponding to the original token.
 
 \subsection{Advance Sentence BERT}
 
@@ -205,7 +218,7 @@ models can be compared.
 \textbf{Model 1} & \textbf{Top-1 Acc} & \textbf{Top-5 Acc} & \textbf{Top-10 Acc} \\
 \hline
 TF--IDF         & 0.003 & 0.019 & 0.042 \\
-RecoBERT        & 0.xxx & 0.xxx & 0.xxx \\
+RecoBERT        & 0.010 & 0.050 & 0.130 \\
 Sentence-BERT   & 0.xxx & 0.xxx & 0.xxx \\
 \hline
 \end{tabular}
@@ -221,7 +234,7 @@ ChatGPT-generated descriptions as the training representation.}
 \textbf{Model 2} & \textbf{Top-1 Acc} & \textbf{Top-5 Acc} & \textbf{Top-10 Acc} \\
 \hline
 TF--IDF         & 0.033 & 0.085 & 0.129 \\
-RecoBERT        & 0.xxx & 0.xxx & 0.xxx \\
+RecoBERT        & 0.010 & 0.090 & 0.190 \\
 Sentence-BERT   & 0.xxx & 0.xxx & 0.xxx \\
 \hline
 \end{tabular}
