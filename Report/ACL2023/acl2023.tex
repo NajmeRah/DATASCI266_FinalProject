@@ -42,38 +42,16 @@ UC Berkeley School of Information \\
 \maketitle
 
 \begin{abstract}
-Plant identification is typically approached through images, yet many real-world botanical records and user queries are text-based. We develop an NLP system that predicts plant species from free-text descriptions and compare three model families: TF-IDF retrieval, Sentence-BERT embeddings, and a domain-adapted BERT model fine-tuned on botanical text. Using $\sim$3,000 curated plant entries from the Perenual API for training and independent Wikipedia descriptions for evaluation, we assess each model’s ability to capture botanical terminology and generalize across domains. Our results provide XXX.
+Plant identification is typically approached through images, yet many real-world botanical records and user queries are text-based. We develop an NLP system that predicts plant species from free-text descriptions and compare three model families: TF-IDF retrieval, Sentence-BERT embeddings with cosine similarity, and a domain-adapted BERT model fine-tuned on botanical text. Using ~3,000 curated plant entries from the Perenual API for training and independent Wikipedia descriptions for evaluation, we assess each model’s ability to capture botanical terminology and generalize across domains. We imagine a system where a user can describe their perfect garden plant and our system would be able to identify the plant closest to what they are describing. Evaluation is done by generating a user's potential description using ChatGPT and the wikipedia entry for each plant. We then see if our models are able to pick out the plant based on the generated query as the top result or in the top 5 and 10. Our results improved upon the base line TF-IDF (0.129 top 10 accuracy) with our domain-adapted BERT model achieving a top 10 accuracy of around 0.190 and the Sentence-BERT embedding model around 0.202. This leaves major room for improvement as the accuracy.
 \end{abstract}
 
 \section{Introduction}
 
 Text-based plant identification is a challenging and understudied problem. While most consumer and scientific plant identification systems rely on images, many real-world scenarios involve only textual descriptions. Botanists record species traits in field notebooks; gardeners describe the type of plant they want without having a photo; and online plant databases contain rich textual descriptions of morphology, habitat, and care requirements. Enabling a model to infer a plant species directly from such descriptions would provide a practical tool for classification, recommendation, and knowledge retrieval.
-
-This project aims to build a model that takes free-text plant descriptions and predicts the most likely species. For example:
-
-\begin{quote}
-\textit{``A small bushy plant with glossy dark leaves, white fragrant flowers in spring, and tolerance for full shade.''}
-\end{quote}
-
-Compared to standard NLP tasks, this domain presents several challenges:
-
-\begin{itemize}
-    \item \textbf{High variability in text form:} expert botanical descriptions vs.\ casual garden language.
-    \item \textbf{Domain-specific terminology:} e.g., \textit{lanceolate}, \textit{pinnate}, \textit{glabrous}, \textit{deciduous}.
-    \item \textbf{Sparse or vague descriptions:} short inputs like ``tree with green leaves'' easily bias models toward common species.
-    \item \textbf{Cross-domain robustness:} models must generalize beyond the style of their training data.
-\end{itemize}
-
-To turn this task into a well-structured experiment, we define the central research question:
+This project aims to build a model that takes free-text plant descriptions and predicts the most likely species based on a user's description of the plant they want. Compared to standard NLP tasks, this domain presents several challenges such as a high variability in text form (expert botanical descriptions vs. casual garden language), domain-specific terminology (e.g., lanceolate, pinnate, glabrous, deciduous), sparse/vague descriptions, and cross-domain robustness as models must generalize beyond the style of their training data. To turn this task into a well-structured experiment, we define the central research question:
 
 \begin{quote}
 \textbf{Does a domain-fine-tuned BERT encoder outperform SBERT and classical retrieval for predicting plant species from free-text descriptions?}
-\end{quote}
-
-We collected approximately 3,000 plant entries from the Perenual Plant API, which provides structured taxonomy metadata and a concise natural-language description for each plant species. Each entry includes a description summarizing appearance, growth habits, care requirements, and notable traits. The dataset contains dozens of metadata attributes (e.g., common name, scientific name, family, growth form, sunlight requirements). The most relevant fields for our NLP task are:
-
-\begin{quote}
-\texttt{description, plant\_anatomy, sunlight, soil, leaf, flowers, fruits, watering, cycle, origin, dimensions, attracts, drought\_tolerant, salt\_tolerant, thorny, edible\_fruit, harvest\_season, medicinal, poisonous\_to\_humans, poisonous\_to\_pets, care\_level, maintenance, growth\_rate}
 \end{quote}
 
 \section{Project Overview}
