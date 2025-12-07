@@ -194,7 +194,7 @@ descriptions (with some masked tokens) through BertModel, average the title
 and description embeddings separately, and compute cosine similarities between the
 averages. The loss function is defined to optimize for higher cosine similarity
 between related plant names and descriptions. We also attempted a variation of this
-where instead of using the embedding averages, we took the "pooler_output" parts of
+where instead of using the embedding averages, we took the pooler_output parts of
 the BertModel title and description outputs and computed their cosine similarities.
 The masked-language model's objective is to learn embeddings for masked tokens that
 give high weight to the original token. This allows for incorporating domain-specific
