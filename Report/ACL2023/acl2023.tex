@@ -8,26 +8,15 @@
 \usepackage{ACL2023}
 \usepackage{graphicx}
 \usepackage{float}
-
-
-% Standard package includes
 \usepackage{times}
 \usepackage{latexsym}
-
-% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
 \usepackage[T1]{fontenc}
-% This assumes your files are encoded as UTF8
 \usepackage[utf8]{inputenc}
-
-% This is not strictly necessary, and may be commented out.
-% However, it will improve the layout of the manuscript,
-% and will typically save some space.
 \usepackage{microtype}
-
-% This is also not strictly necessary, and may be commented out.
-% However, it will improve the aesthetics of text in
-% the typewriter font.
 \usepackage{inconsolata}
+\usepackage{hyperref}
+
+
 
 \title{Branching Out: NLP Plant Recommender}
 
@@ -35,11 +24,19 @@
 Shubham Banavalikar \quad Ben Robbins \quad Najmeh Rahimi \\
 W266: Natural Language Processing \\
 UC Berkeley School of Information \\
-\texttt{\{nina, ali, mo\}@ischool.berkeley.edu}
+\texttt{\{shubhambb, ben.robbins, nrahimi\}@ischool.berkeley.edu}
 }
 
 \begin{document}
 \maketitle
+
+\hypersetup{
+    colorlinks=true,
+    urlcolor=blue,
+    citecolor=blue,
+    linkcolor=blue
+}
+
 
 \begin{abstract}
 Plant identification is typically approached through images, yet many real-world botanical records and user queries are text-based. We develop an NLP system that predicts plant species from free-text descriptions and compare three model families: TF-IDF retrieval, Sentence-BERT embeddings with cosine similarity, and a domain-adapted BERT model fine-tuned on botanical text. Using ~3,000 curated plant entries from the Perenual API for training and independent Wikipedia descriptions for evaluation, we assess each model’s ability to capture botanical terminology and generalize across domains. We imagine a system where a user can describe their perfect garden plant and our system would be able to identify the plant closest to what they are describing. Evaluation is done by generating a user's potential description using ChatGPT and the wikipedia entry for each plant. We then see if our models are able to pick out the plant based on the generated query as the top result or in the top 5 and 10. Our results improved upon the base line TF-IDF (0.129 top 10 accuracy) with our domain-adapted BERT model achieving a top 10 accuracy of around 0.190 and the Sentence-BERT embedding model around 0.202. This leaves major room for improvement as the accuracy.
@@ -89,7 +86,7 @@ motivate our hypothesis that fine-tuning BERT on botanical text will outperform 
 pretrained models for species identification.
 
 Several related works examine recommendation and retrieval using item descriptions.
-RecoBERT \cite{ecommerceNLP2021} introduces domain-adapted encoders for catalog item retrieval
+RecoBERT \cite{malkiel2020recobert} introduces domain-adapted encoders for catalog item retrieval
 and shows that fine-tuned BERT models yield substantial improvements in domain-specific
 semantic understanding.
 
@@ -168,26 +165,32 @@ models can be compared.
 RecoBERT has 2 components: title-description model and masked-language model. The
 title-description model's objective is to learn whether or not a given plant name
 and plant description are related. In the paper, they pass tokenized titles and
-descriptions (with some masked tokens) through BertModel, average the title
+descriptions (with some masked tokens) through \texttt{BertModel}, average the title
 and description embeddings separately, and compute cosine similarities between the
 averages. The loss function is defined to optimize for higher cosine similarity
 between related plant names and descriptions. We also attempted a variation of this
-where instead of using the embedding averages, we took the pooler_output parts of
-the BertModel title and description outputs and computed their cosine similarities.
+where instead of using the embedding averages, we took the \texttt{pooler\_output} parts of
+the \texttt{BertModel} title and description outputs and computed their cosine similarities.
 The masked-language model's objective is to learn embeddings for masked tokens that
 give high weight to the original token. This allows for incorporating domain-specific
-nuances. Specifically, it projects BertModel embeddings onto the dimension of vocabulary
+nuances. Specifically, it projects \texttt{BertModel} embeddings onto the dimension of vocabulary
 size and uses a loss function that optimizes for a high embedding value for the index
 corresponding to the original token.
 
+For evaluation, we ranked candidate recommendations by the sum of (1) the cosine similarity between the user query description and the candidate plant name, and (2) the cosine similarity between the user query description and the candidate plant description, where all embeddings used for cosine similarity are produced by the model.
+
+
+
 \subsection{Advance Sentence BERT}
 
-For the implementation of SBert we first used all-MiniLM-L6-v2 from hugging face to encode both the Perenual data and the text generated from the wikipedia descriptions. For each Perenual description embedding a cosine similarity was run against each of the generated descriptions. Then the top k similar embeddings were selected for each Perenual description where k = 1, 5, and 10. Each of these embeddings were then translated back into their plant names. Accuracy was calculated for each of the k values where the original Perenual name was in the list of predicted values.
+For the implementation of SBert we first used all-MiniLM-L6-v2 from hugging face   to encode both the Perenual data and the text generated from the wikipedia descriptions. For each Perenual description embedding a cosine similarity was run against each of the generated descriptions. Then the top k similar embeddings were selected for each Perenual description where k = 1, 5, and 10. Each of these embeddings were then translated back into their plant names. Accuracy was calculated for each of the k values where the original Perenual name was in the list of predicted values.
 
-In an attempt to improve the accuracy the same model was then finetuned. For this all but the last layer of the model had their parameters frozen. The Perenual dataset text descriptions with the description generated from ChatGPT based on the Perenual dataset were paired with a cosine similarity of 1. To generate some negative examples the descriptions were shifted 5 places. These were given a cosine similarity of 0. The model was then finetuned over one epoch using the CoSENTLoss loss function with a batch size of 16 and a warm up ratio of 0.1.
+In an attempt to improve the accuracy the same model was then finetuned. For this all but the last layer of the model had their parameters frozen. The Perenual dataset text descriptions with the description generated from ChatGPT based on the Perenual dataset were paired with a cosine similarity of 1. To generate some negative examples the descriptions were shifted 5 places. These were given a cosine similarity of 0. The model was then finetuned over one epoch using the CoSENTLoss loss function \cite{huggingface2023sberttraining} with a batch size of 16 and a warm up ratio of 0.1.
 Code: \href{https://github.com/NajmeRah/DATASCI266_FinalProject/blob/main/Code/SBert.ipynb}{SBERT Code}
 
 \section{Results}
+
+For retrieval-style plant identification, the goal is to surface the correct species among a ranked list of candidates, rather than classify every description into a single label. For this reason, to evaluate the various approaches, we decided to use metrics such as \textbf{Top-1}, \textbf{Top-5}, and \textbf{Top-10} accuracy, as they directly measure the quality of ranked recommendations. Traditional metrics like precision and recall assume binary classification and do not reflect how well a model orders candidates or whether the correct plant appears among the top suggestions a user would actually see.
 
 
 \subsection{Accuracy}
@@ -196,7 +199,7 @@ Code: \href{https://github.com/NajmeRah/DATASCI266_FinalProject/blob/main/Code/S
 \centering
 \begin{tabular}{lccc}
 \hline
-\textbf{Model 1} & \textbf{Top-1 Acc} & \textbf{Top-5 Acc} & \textbf{Top-10 Acc} \\
+\textbf{Model 1} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} \\
 \hline
 TF--IDF         & 0.003 & 0.019 & 0.042 \\
 RecoBERT        & 0.010 & 0.050 & 0.130 \\
@@ -212,7 +215,7 @@ ChatGPT-generated descriptions as the training representation.}
 \centering
 \begin{tabular}{lccc}
 \hline
-\textbf{Model 2} & \textbf{Top-1 Acc} & \textbf{Top-5 Acc} & \textbf{Top-10 Acc} \\
+\textbf{Model 2} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} \\
 \hline
 TF--IDF         & 0.033 & 0.085 & 0.129 \\
 RecoBERT        & 0.010 & 0.090 & 0.190 \\
@@ -228,7 +231,19 @@ rule-based flattened \texttt{text} representation of the Perenual data.}
 
 \subsection{Comparison of Results}
 
-% TODO: short discussion comparing models and text representations
+Across both versions of the Perenual dataset discussed at the beginning of the
+\textit{Models} section, Advanced Sentence-BERT consistently outperforms the
+TF--IDF baseline and RecoBERT. TF--IDF, while simple and interpretable, shows
+limited retrieval capacity, although the Top-1 accuracy increases from 0.3\% for
+the generated-descriptions variant to 3.3\% for the rule-based variant.
+RecoBERT performs better than TF--IDF at higher $K$ values, suggesting that its
+learned alignment between plant names and descriptions provides some semantic
+signal; however, its Top-1 accuracy remains low, indicating difficulty in
+selecting the single correct species. Advanced Sentence-BERT shows the strongest
+performance across all metrics, achieving the highest Top-1, Top-5, and Top-10
+accuracies for both Perenual dataset variants. This demonstrates the ability of
+its sentence encoder to capture richer semantic representations of plant
+descriptions.
 
 \section*{Conclusion}
 
