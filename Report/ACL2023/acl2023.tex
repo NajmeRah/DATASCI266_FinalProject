@@ -18,6 +18,7 @@
 
 
 
+
 \title{Branching Out: NLP Plant Recommender}
 
 \author{
@@ -54,7 +55,6 @@ This project aims to build a model that takes free-text plant descriptions and p
 \section{Project Overview}
 
 \subsection{Datasets Used}
-
 We initially explored recreating the dataset in
 \cite{domazetoski2025planttraits},
 which relies on species descriptions scraped from the Plants of the World Online (POWO)
@@ -63,11 +63,9 @@ extensive web scraping and preprocessing to resolve inconsistencies in formattin
 fields, and taxonomic structure. Because reconstructing a reliable version of this dataset
 was beyond the scope of our project timeline, we transitioned to an alternative public source.
 
+
 Our final training dataset was built using the Perenual Botanical API
-\cite{perenualAPI}, from which we extracted 3{,}000 plant entries.
-Each entry includes structured horticultural attributes (e.g., sunlight requirements,
-watering needs, soil type, growth cycle) as well as a free-text description of the species.
-The raw dataset contained 1{,}548 unique common names and 3{,}000 unique scientific names.
+\cite{perenualAPI}, from which we extracted 3{,}000 plant entries. While this corpus is relatively small for modern NLP tasks, we found no larger publicly available dataset that provides both reliable species labels and sufficiently detailed textual descriptions. As a result, our experiments reflect the constraints of working with a limited but high-quality dataset. Each entry includes structured horticultural attributes (e.g., sunlight requirements,watering needs, soil type, growth cycle) as well as a free-text description of the species. The raw dataset contained 1{,}548 unique common names and 3{,}000 unique scientific names.
 Since users of a plant recommendation or identification system are more likely to interact
 using common names rather than scientific nomenclature, we selected \textbf{common names
 as the prediction labels} for all retrieval-based models.
@@ -78,7 +76,6 @@ in writing style and lexical choice from the Perenual dataset, allowing us to te
 robustness under more natural and diverse input conditions.
 
 \subsection{Background}
-
 Domazetoski et al.~ \cite{domazetoski2025planttraits} demonstrated that transformer-based models can extract
 functional plant traits from long botanical descriptions, highlighting the importance
 of domain-specific vocabulary adaptation for improving model performance. Their findings
@@ -96,7 +93,6 @@ on trait extraction, embedding analysis, or general recommender systems---not on
 identifying plant species from free-text descriptions. This project addresses that gap.
 
 \subsection{Data Representation and Preprocessing}
-
 The Perenual API returns plant information in a nested JSON format containing a mix
 of free-text descriptions, categorical attributes (e.g., sunlight level, watering
 frequency, growth cycle), and boolean variables (e.g., drought tolerant, poisonous
@@ -133,7 +129,6 @@ formats influence downstream species identification models.
 \end{figure*}
 
 \section{Models}
-
 We evaluate three retrieval-based models for text-only plant species identification:
 a TF--IDF baseline, a domain-adapted BERT model (RecoBERT), and an advanced
 Sentence-BERT encoder. Each model is trained on two versions of the Perenual dataset:
@@ -146,7 +141,6 @@ and we report Top-1 and Top-10 accuracy to capture both strict and lenient retri
 performance.
 
 \subsection{Baseline Model}
-
 As a classical baseline, we implemented a TF--IDF retrieval model that treats plant
 identification as a text-matching problem rather than a supervised classifier. Each
 plant entry in the training set was converted into a single enriched text document
@@ -161,7 +155,6 @@ a simple and interpretable keyword-based baseline against which the embedding-ba
 models can be compared.
 
 \subsection{Reco BERT}
-
 RecoBERT has 2 components: title-description model and masked-language model. The
 title-description model's objective is to learn whether or not a given plant name
 and plant description are related. In the paper, they pass tokenized titles and
@@ -180,22 +173,17 @@ corresponding to the original token.
 For evaluation, we ranked candidate recommendations by the sum of (1) the cosine similarity between the user query description and the candidate plant name, and (2) the cosine similarity between the user query description and the candidate plant description, where all embeddings used for cosine similarity are produced by the model.
 
 
-
 \subsection{Advance Sentence BERT}
-
 For the implementation of SBert we first used all-MiniLM-L6-v2 from hugging face   to encode both the Perenual data and the text generated from the wikipedia descriptions. For each Perenual description embedding a cosine similarity was run against each of the generated descriptions. Then the top k similar embeddings were selected for each Perenual description where k = 1, 5, and 10. Each of these embeddings were then translated back into their plant names. Accuracy was calculated for each of the k values where the original Perenual name was in the list of predicted values.
 
 In an attempt to improve the accuracy the same model was then finetuned. For this all but the last layer of the model had their parameters frozen. The Perenual dataset text descriptions with the description generated from ChatGPT based on the Perenual dataset were paired with a cosine similarity of 1. To generate some negative examples the descriptions were shifted 5 places. These were given a cosine similarity of 0. The model was then finetuned over one epoch using the CoSENTLoss loss function \cite{huggingface2023sberttraining} with a batch size of 16 and a warm up ratio of 0.1.
 Code: \href{https://github.com/NajmeRah/DATASCI266_FinalProject/blob/main/Code/SBert.ipynb}{SBERT Code}
 
 \section{Results}
-
 For retrieval-style plant identification, the goal is to surface the correct species among a ranked list of candidates, rather than classify every description into a single label. For this reason, to evaluate the various approaches, we decided to use metrics such as \textbf{Top-1}, \textbf{Top-5}, and \textbf{Top-10} accuracy, as they directly measure the quality of ranked recommendations. Traditional metrics like precision and recall assume binary classification and do not reflect how well a model orders candidates or whether the correct plant appears among the top suggestions a user would actually see.
 
-
 \subsection{Accuracy}
-
-\begin{table}[H]
+\begin{table}[!h]
 \centering
 \begin{tabular}{lccc}
 \hline
@@ -211,8 +199,8 @@ ChatGPT-generated descriptions as the training representation.}
 \label{tab:results-llm}
 \end{table}
 
-\begin{table}[H]
-\centering
+\bigskip
+\noindent\begin{center}
 \begin{tabular}{lccc}
 \hline
 \textbf{Model 2} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Top-10} \\
@@ -222,11 +210,10 @@ RecoBERT        & 0.010 & 0.090 & 0.190 \\
 Sentence-BERT   & 0.050 & 0.141 & 0.202 \\
 \hline
 \end{tabular}
-\caption{Retrieval accuracy on the Wikipedia evaluation set using the
-rule-based flattened \texttt{text} representation of the Perenual data.}
-\label{tab:results-flat}
-\end{table}
+\end{center}
 
+\noindent\textbf{Table 2:} Retrieval accuracy on the Wikipedia evaluation set using the
+rule-based flattened \texttt{text} representation of the Perenual data.
 
 
 \subsection{Comparison of Results}
@@ -246,7 +233,6 @@ its sentence encoder to capture richer semantic representations of plant
 descriptions.
 
 \section*{Conclusion}
-
 While we were able to improve upon the baseline, our struggle to improve it to a point of getting close to half of the results in the top 10 predicted shows the difficulty of the task. This first and foremost appears to us to be a victim of not enough differentiating information between classes. While we tried to combat a lack of relatively low number of examples per plant species by rewriting the examples with AI, the large number of descriptions combined with the similarity of species made it difficult to differentiate without more information. For example, the SBERT model would predict fig instead of common fig, tall fescue instead of fescue, sweet fennel instead of fennel, and often mix up the many species of apple trees that were in the list. Additionally, having a limited number of descriptions for each plant made it harder for the models to learn unique traits for each of them.
 
 Another thing that may be hindering our results is the prompt phrasings of the generated sets of data. Specifically, generated user versions of plant queries include filler words that distract from the core content to be compared. In our process to build the models we also would occasionally run the models on the raw wikipedia descriptions instead of the generated user versions. These yielded much better results though we chose to exclude them from our results as we thought they were less authentic to what a human user would query. Given more time and data these models could drastically improve off of the final state of the project.
