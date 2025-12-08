@@ -236,9 +236,11 @@ rule-based flattened \texttt{text} representation of the Perenual data.}
 
 % TODO: brief limitations paragraph
 
-\section*{Ethics Statement}
+\section*{Conclusion}
 
-% TODO: short ethics statement if required
+While we were able to improve upon the baseline, our struggle to improve it to a point of getting close to half of the results in the top 10 predicted shows the difficulty of the task. This first and foremost appears to us to be a victim of not enough differentiating information between classes. While we tried to combat a lack of relatively low number of examples per plant species by rewriting the examples with AI, the large number of descriptions combined with the similarity of species made it difficult to differentiate without more information. For example, the SBERT model would predict fig instead of common fig, tall fescue instead of fescue, sweet fennel instead of fennel, and often mix up the many species of apple trees that were in the list. Additionally, having a limited number of descriptions for each plant made it harder for the models to learn unique traits for each of them.
+
+Another thing that may be hindering our results is the prompt phrasings of the generated sets of data. Specifically, generated user versions of plant queries include filler words that distract from the core content to be compared. In our process to build the models we also would occasionally run the models on the raw wikipedia descriptions instead of the generated user versions. These yielded much better results though we chose to exclude them from our results as we thought they were less authentic to what a human user would query. Given more time and data these models could drastically improve off of the final state of the project.
 
 \bibliographystyle{acl_natbib}
 \bibliography{custom}
